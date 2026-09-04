@@ -116,6 +116,22 @@ function detectScenario(statement: string, category: string): string {
     return 'dinamica_horizontal';
   }
   if (
+    text.includes('esfera') ||
+    text.includes('carga') ||
+    text.includes('coulomb') ||
+    text.includes('eléctrico') ||
+    text.includes('electrico') ||
+    text.includes('campo') ||
+    text.includes('potencial') ||
+    text.includes('gauss') ||
+    text.includes('atracción') ||
+    text.includes('repulsión') ||
+    category === 'electromagnetismo'
+  ) {
+    return 'electromagnetismo';
+  }
+
+  if (
     text.includes('velocidad') ||
     text.includes('distancia') ||
     text.includes('tiempo') ||
@@ -467,6 +483,48 @@ export function generatePhysicsDiagramSVG(input: DiagramGeneratorInput): string 
         <!-- Centripetal acceleration / force ac pointing to center -->
         <line x1="0" y1="0" x2="-70" y2="70" stroke="#f43f5e" stroke-width="3" marker-end="url(#mRose)" />
         <text x="-40" y="35" font-size="12" font-weight="bold" fill="#f43f5e">F⃗_c = m·a_c</text>
+      </g>`;
+      break;
+    }
+
+    case 'electromagnetismo': {
+      scenarioContent = `
+      <!-- Electric Field Background Lines -->
+      <g stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.4">
+        <line x1="360" y1="200" x2="180" y2="100" />
+        <line x1="360" y1="200" x2="540" y2="100" />
+        <line x1="360" y1="200" x2="160" y2="200" />
+        <line x1="360" y1="200" x2="560" y2="200" />
+        <line x1="360" y1="200" x2="200" y2="300" />
+        <line x1="360" y1="200" x2="520" y2="300" />
+      </g>
+
+      <!-- Spherical Conductor / Charge Q at center -->
+      <g transform="translate(360, 200)">
+        <circle cx="0" cy="0" r="55" fill="url(#blockGrad)" stroke="#60a5fa" stroke-width="3" filter="url(#softShadow)" />
+        <circle cx="0" cy="0" r="48" fill="none" stroke="#93c5fd" stroke-width="1.5" stroke-dasharray="3 3" />
+        <text x="-22" y="-12" font-size="14" font-weight="bold" fill="#facc15">+</text>
+        <text x="12" y="-15" font-size="14" font-weight="bold" fill="#facc15">+</text>
+        <text x="-25" y="18" font-size="14" font-weight="bold" fill="#facc15">+</text>
+        <text x="15" y="20" font-size="14" font-weight="bold" fill="#facc15">+</text>
+        <text x="0" y="4" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle">Q, Radio R</text>
+
+        <!-- Radius line -->
+        <line x1="0" y1="0" x2="38" y2="38" stroke="#fbbf24" stroke-width="2.5" />
+        <circle cx="38" cy="38" r="3" fill="#fbbf24" />
+        <text x="45" y="52" font-size="12" font-weight="bold" fill="#fbbf24">R</text>
+
+        <!-- Electric Field vector E -->
+        <line x1="65" y1="0" x2="135" y2="0" stroke="#34d399" stroke-width="3" marker-end="url(#mGreen)" />
+        <text x="75" y="-12" font-size="12" font-weight="bold" fill="#34d399">E⃗ (Campo)</text>
+      </g>
+
+      <!-- External Test Charge q (Attraction / Repulsion Force) -->
+      <g transform="translate(560, 200)">
+        <circle cx="0" cy="0" r="22" fill="#f43f5e" stroke="#fda4af" stroke-width="2.5" filter="url(#softShadow)" />
+        <text x="0" y="5" font-size="13" font-weight="bold" fill="#ffffff" text-anchor="middle">q</text>
+        <line x1="-22" y1="0" x2="-80" y2="0" stroke="#facc15" stroke-width="3.5" marker-end="url(#mYellow)" />
+        <text x="-75" y="-12" font-size="12" font-weight="bold" fill="#facc15">F⃗_e (Fuerza Eléctrica)</text>
       </g>`;
       break;
     }
