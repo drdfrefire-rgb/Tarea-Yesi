@@ -11,6 +11,7 @@ import {
   ArrowRightLeft,
   Download,
   Sliders,
+  Sparkles,
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -54,10 +55,10 @@ export const Navbar: React.FC<NavbarProps> = ({
         )}
 
         <div className="flex items-center gap-2 min-w-0">
-          <div className="relative w-8 h-8 sm:w-9 sm:h-9 bg-gradient-to-tr from-indigo-700 via-indigo-600 to-violet-500 rounded-xl flex items-center justify-center text-white shadow-sm border border-indigo-400/30 shrink-0">
-            <Atom className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-indigo-100" />
-            <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-violet-900 border border-indigo-300/40 rounded-full flex items-center justify-center text-[9px] font-mono font-bold text-indigo-200">
-              Φ
+          <div className="relative w-8 h-8 sm:w-9 sm:h-9 bg-gradient-to-tr from-cyan-600 via-indigo-600 to-violet-600 rounded-xl flex items-center justify-center text-white shadow-md border border-cyan-400/40 shrink-0">
+            <Sparkles className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-cyan-200 animate-pulse" />
+            <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-slate-900 border border-cyan-400/60 rounded-full flex items-center justify-center text-[9px] font-mono font-black text-cyan-300">
+              JL
             </span>
           </div>
           <div className="flex flex-col leading-none min-w-0">
