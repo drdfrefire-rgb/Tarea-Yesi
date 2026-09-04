@@ -94,12 +94,20 @@ app.post('/api/ocr-scan', async (req, res) => {
   }
 });
 
-// Physics solver endpoint
+// Physics solver endpoint with deterministic cache
+const serverSolutionCache = new Map<string, any>();
+
 app.post('/api/solve-physics', async (req, res) => {
   try {
     const { problemStatement, category, difficulty, image } = req.body || {};
 
     let statementToUse = (problemStatement || '').trim();
+
+    const cacheKey = statementToUse.toLowerCase().replace(/[\s\p{P}]/gu, '');
+    if (cacheKey.length > 3 && serverSolutionCache.has(cacheKey)) {
+      const cached = serverSolutionCache.get(cacheKey);
+      return res.json({ ...cached, id: 'sol-srv-cache-' + Date.now() });
+    }
 
     // If statement is empty or generic and we have an image, extract exact text via OCR first
     if ((!statementToUse || statementToUse.length < 5 || statementToUse.includes('Problema físico') || statementToUse.includes('analizado desde la imagen')) && image && image.data && image.mimeType) {
@@ -107,20 +115,29 @@ app.post('/api/solve-physics', async (req, res) => {
       if (apiKey) {
         try {
           const ai = getGenAI();
-          const ocrResp = await ai.models.generateContent({
-            model: 'gemini-3.6-flash',
-            contents: [
-              {
-                inlineData: {
-                  mimeType: image.mimeType,
-                  data: image.data,
-                },
-              },
-              {
-                text: 'Transcribe con absoluta precisión todo el enunciado, datos numéricos, unidades e incógnitas de este problema de física en la imagen. Devuelve únicamente el texto plano del enunciado.',
-              },
-            ],
-          });
+          const CANDIDATE_MODELS = ['gemini-3.5-flash-lite', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+          let ocrResp: any = null;
+          for (const mName of CANDIDATE_MODELS) {
+            try {
+              ocrResp = await ai.models.generateContent({
+                model: mName,
+                contents: [
+                  {
+                    inlineData: {
+                      mimeType: image.mimeType,
+                      data: image.data,
+                    },
+                  },
+                  {
+                    text: 'Transcribe con absoluta precisión todo el enunciado, datos numéricos, unidades e incógnitas de este problema de física en la imagen. Devuelve únicamente el texto plano del enunciado.',
+                  },
+                ],
+              });
+              if (ocrResp?.text) break;
+            } catch (err) {
+              console.warn(`OCR model ${mName} failed:`, err);
+            }
+          }
           if (ocrResp?.text) {
             const t = ocrResp.text.trim().replace(/^```[a-z]*\s*/i, '').replace(/\s*```$/, '');
             if (t.length > 5) {
@@ -313,9 +330,12 @@ NIVEL DE COMPLEJIDAD: ${difficultyToUse}`,
       unknowns: solutionData.unknowns || [],
     });
 
-    const sanitizedAiSvg = sanitizeSvgCode(solutionData.diagram?.svgCode);
     solutionData.diagram.proceduralSvgCode = proceduralSvg;
-    solutionData.diagram.svgCode = sanitizedAiSvg || proceduralSvg;
+    solutionData.diagram.svgCode = proceduralSvg;
+
+    if (cacheKey.length > 3) {
+      serverSolutionCache.set(cacheKey, solutionData);
+    }
 
     return res.json(solutionData);
   } catch (error: any) {

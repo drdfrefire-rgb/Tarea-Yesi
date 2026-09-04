@@ -36,6 +36,15 @@ function extractValue(valStr: string | undefined): number | null {
 function detectScenario(statement: string, category: string): string {
   const text = (statement + ' ' + category).toLowerCase();
 
+  if (text.includes('cilindro') || text.includes('cilíndrica') || text.includes('cilindrica')) {
+    return 'cilindro';
+  }
+  if (text.includes('cuadrado') || text.includes('rectangulo') || text.includes('rectángulo')) {
+    return 'cuadrado_rectangulo';
+  }
+  if (text.includes('triangulo') || text.includes('triángulo')) {
+    return 'triangulo';
+  }
   if (text.includes('plano inclinado') || text.includes('rampa') || text.includes('inclinad')) {
     return 'plano_inclinado';
   }
@@ -243,6 +252,81 @@ export function generatePhysicsDiagramSVG(input: DiagramGeneratorInput): string 
   let scenarioContent = '';
 
   switch (scenario) {
+    case 'cilindro': {
+      scenarioContent = `
+      <!-- Cilindro 3D de Ingeniería Avanzada -->
+      <g opacity="0.3" stroke="#38bdf8" stroke-width="1">
+        <line x1="360" y1="60" x2="360" y2="360" stroke-dasharray="6 6" />
+        <line x1="200" y1="210" x2="520" y2="210" stroke-dasharray="6 6" />
+      </g>
+      <text x="375" y="80" font-size="11" font-weight="bold" fill="#94a3b8">Eje z (Simetría Axial)</text>
+
+      <!-- Superficie Gausiana Cilindrica Interna / Externa -->
+      <g filter="url(#softShadow)" opacity="0.85">
+        <rect x="280" y="120" width="160" height="180" rx="10" fill="url(#engBlueGrad)" stroke="#38bdf8" stroke-width="2.5" />
+        <ellipse cx="360" cy="120" rx="80" ry="20" fill="#3b82f6" stroke="#93c5fd" stroke-width="2" />
+        <ellipse cx="360" cy="300" rx="80" ry="20" fill="#1d4ed8" stroke="#93c5fd" stroke-width="2" />
+      </g>
+
+      <!-- Cilindro Gausiano Concéntrico r < R -->
+      <ellipse cx="360" cy="210" rx="55" ry="14" fill="none" stroke="#facc15" stroke-width="2" stroke-dasharray="4 4" />
+      <text x="360" y="195" font-size="10" font-weight="bold" fill="#facc15" text-anchor="middle">Superficie Gausiana (r)</text>
+
+      <!-- Radio R Dimension -->
+      <line x1="360" y1="210" x2="440" y2="210" stroke="#fbbf24" stroke-width="3" marker-end="url(#mAmber)" />
+      <rect x="385" y="193" width="30" height="18" rx="4" fill="#78350f" stroke="#fbbf24" stroke-width="1" />
+      <text x="400" y="206" font-size="11" font-weight="bold" fill="#fde68a" text-anchor="middle">R</text>
+
+      <!-- Campo eléctrico E radial -->
+      <line x1="440" y1="210" x2="540" y2="210" stroke="#34d399" stroke-width="3" marker-end="url(#mGreen)" />
+      <text x="470" y="195" font-size="12" font-weight="bold" fill="#34d399">E⃗(r) Radial</text>
+      <line x1="280" y1="210" x2="180" y2="210" stroke="#34d399" stroke-width="3" marker-end="url(#mGreen)" />`;
+      break;
+    }
+    case 'cuadrado_rectangulo': {
+      scenarioContent = `
+      <!-- Geometría Cuadrada / Rectangular de Ingeniería -->
+      <g filter="url(#softShadow)">
+        <rect x="220" y="110" width="280" height="190" rx="10" fill="url(#engBlueGrad)" stroke="#38bdf8" stroke-width="3" />
+      </g>
+      <!-- Vértices y Ejes -->
+      <circle cx="220" cy="110" r="4" fill="#facc15" />
+      <text x="205" y="105" font-size="11" font-weight="bold" fill="#facc15">A</text>
+      <circle cx="500" cy="110" r="4" fill="#facc15" />
+      <text x="508" y="105" font-size="11" font-weight="bold" fill="#facc15">B</text>
+
+      <!-- Dimensiones Acotadas -->
+      <line x1="220" y1="320" x2="500" y2="320" stroke="#fbbf24" stroke-width="2.5" marker-start="url(#mAmber)" marker-end="url(#mAmber)" />
+      <g transform="translate(325, 310)">
+        <rect width="70" height="22" rx="6" fill="#78350f" stroke="#fbbf24" stroke-width="1.2" />
+        <text x="35" y="15" font-size="11" font-weight="bold" fill="#fde68a" text-anchor="middle">Base (L)</text>
+      </g>
+
+      <line x1="530" y1="110" x2="530" y2="300" stroke="#34d399" stroke-width="2.5" marker-start="url(#mGreen)" marker-end="url(#mGreen)" />
+      <g transform="translate(540, 195)">
+        <rect width="65" height="22" rx="6" fill="#064e3b" stroke="#34d399" stroke-width="1.2" />
+        <text x="32.5" y="15" font-size="11" font-weight="bold" fill="#6ee7b7" text-anchor="middle">Altura (H)</text>
+      </g>`;
+      break;
+    }
+    case 'triangulo': {
+      scenarioContent = `
+      <!-- Triángulo Geométrico de Ingeniería -->
+      <polygon points="200,310 520,310 360,110" fill="url(#engBlueGrad)" stroke="#38bdf8" stroke-width="3" filter="url(#softShadow)" />
+      
+      <!-- Altura central perpendicular -->
+      <line x1="360" y1="110" x2="360" y2="310" stroke="#34d399" stroke-width="2.5" stroke-dasharray="5 5" />
+      <rect x="370" y="200" width="70" height="22" rx="6" fill="#064e3b" stroke="#34d399" stroke-width="1.2" />
+      <text x="405" y="215" font-size="11" font-weight="bold" fill="#6ee7b7" text-anchor="middle">Altura (h)</text>
+
+      <!-- Base Acotada -->
+      <line x1="200" y1="330" x2="520" y2="330" stroke="#fbbf24" stroke-width="2.5" marker-start="url(#mAmber)" marker-end="url(#mAmber)" />
+      <g transform="translate(325, 320)">
+        <rect width="70" height="22" rx="6" fill="#78350f" stroke="#fbbf24" stroke-width="1.2" />
+        <text x="35" y="15" font-size="11" font-weight="bold" fill="#fde68a" text-anchor="middle">Base (b)</text>
+      </g>`;
+      break;
+    }
     case 'plano_inclinado': {
       // Find theta if specified
       const thetaObj = knowns.find((k) => k.symbol.includes('theta') || k.symbol.includes('θ') || k.value.includes('°'));

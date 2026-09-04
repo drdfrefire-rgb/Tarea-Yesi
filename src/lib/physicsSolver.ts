@@ -23,8 +23,16 @@ function parsePhysicsProblem(statement: string) {
   };
 }
 
+const localSolutionCache = new Map<string, PhysicsSolution>();
+
 export function solvePhysicsLocally(problemStatement: string, category: string): PhysicsSolution {
   const statement = (problemStatement || '').trim();
+  const cacheKey = statement.toLowerCase().replace(/[\s\p{P}]/gu, '');
+  if (localSolutionCache.has(cacheKey)) {
+    const cached = localSolutionCache.get(cacheKey)!;
+    return { ...cached, id: 'sol-local-cache-' + Date.now() };
+  }
+
   const lowerText = statement.toLowerCase();
   
   let title = 'Resolución Analítica Rigurosa';
