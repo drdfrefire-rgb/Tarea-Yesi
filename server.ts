@@ -99,7 +99,44 @@ app.post('/api/solve-physics', async (req, res) => {
   try {
     const { problemStatement, category, difficulty, image } = req.body || {};
 
-    const statementToUse = (problemStatement || '').trim() || 'Un bloque de masa m = 4.0 kg desliza por un plano inclinado θ = 30° con coeficiente de fricción cinética μ_k = 0.20. Determine la aceleración y la fuerza normal.';
+    let statementToUse = (problemStatement || '').trim();
+
+    // If statement is empty or generic and we have an image, extract exact text via OCR first
+    if ((!statementToUse || statementToUse.length < 5 || statementToUse.includes('Problema físico') || statementToUse.includes('analizado desde la imagen')) && image && image.data && image.mimeType) {
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (apiKey) {
+        try {
+          const ai = getGenAI();
+          const ocrResp = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: [
+              {
+                inlineData: {
+                  mimeType: image.mimeType,
+                  data: image.data,
+                },
+              },
+              {
+                text: 'Transcribe con absoluta precisión todo el enunciado, datos numéricos, unidades e incógnitas de este problema de física en la imagen. Devuelve únicamente el texto plano del enunciado.',
+              },
+            ],
+          });
+          if (ocrResp?.text) {
+            const t = ocrResp.text.trim().replace(/^```[a-z]*\s*/i, '').replace(/\s*```$/, '');
+            if (t.length > 5) {
+              statementToUse = t;
+            }
+          }
+        } catch (e) {
+          console.warn('Inline solve-physics OCR extraction error:', e);
+        }
+      }
+    }
+
+    if (!statementToUse) {
+      statementToUse = 'Un bloque de masa m = 4.0 kg desliza por un plano inclinado θ = 30° con coeficiente de fricción cinética μ_k = 0.20. Determine la aceleración y la fuerza normal.';
+    }
+
     const categoryToUse = category || 'dinamica';
     const difficultyToUse = difficulty || 'Intermedio';
 
@@ -258,7 +295,7 @@ NIVEL DE COMPLEJIDAD: ${difficultyToUse}`,
     }
 
     solutionData.id = 'sol-' + Date.now();
-    solutionData.problemStatement = solutionData.problemStatement || statementToUse;
+    solutionData.problemStatement = statementToUse;
     solutionData.createdAt = Date.now();
 
     if (!solutionData.diagram) {
