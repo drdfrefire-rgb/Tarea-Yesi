@@ -491,40 +491,49 @@ export function generatePhysicsDiagramSVG(input: DiagramGeneratorInput): string 
       scenarioContent = `
       <!-- Electric Field Background Lines -->
       <g stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.4">
-        <line x1="360" y1="200" x2="180" y2="100" />
-        <line x1="360" y1="200" x2="540" y2="100" />
-        <line x1="360" y1="200" x2="160" y2="200" />
-        <line x1="360" y1="200" x2="560" y2="200" />
-        <line x1="360" y1="200" x2="200" y2="300" />
-        <line x1="360" y1="200" x2="520" y2="300" />
+        <line x1="280" y1="200" x2="100" y2="100" />
+        <line x1="280" y1="200" x2="460" y2="100" />
+        <line x1="280" y1="200" x2="80" y2="200" />
+        <line x1="280" y1="200" x2="480" y2="200" />
+        <line x1="280" y1="200" x2="120" y2="300" />
+        <line x1="280" y1="200" x2="440" y2="300" />
       </g>
 
       <!-- Spherical Conductor / Charge Q at center -->
-      <g transform="translate(360, 200)">
+      <g transform="translate(280, 200)">
         <circle cx="0" cy="0" r="55" fill="url(#blockGrad)" stroke="#60a5fa" stroke-width="3" filter="url(#softShadow)" />
         <circle cx="0" cy="0" r="48" fill="none" stroke="#93c5fd" stroke-width="1.5" stroke-dasharray="3 3" />
         <text x="-22" y="-12" font-size="14" font-weight="bold" fill="#facc15">+</text>
         <text x="12" y="-15" font-size="14" font-weight="bold" fill="#facc15">+</text>
         <text x="-25" y="18" font-size="14" font-weight="bold" fill="#facc15">+</text>
         <text x="15" y="20" font-size="14" font-weight="bold" fill="#facc15">+</text>
-        <text x="0" y="4" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle">Q, Radio R</text>
+        <text x="0" y="4" font-size="14" font-weight="bold" fill="#ffffff" text-anchor="middle">Esfera Q</text>
 
-        <!-- Radius line -->
+        <!-- Radius line R -->
         <line x1="0" y1="0" x2="38" y2="38" stroke="#fbbf24" stroke-width="2.5" />
         <circle cx="38" cy="38" r="3" fill="#fbbf24" />
-        <text x="45" y="52" font-size="12" font-weight="bold" fill="#fbbf24">R</text>
+        <text x="48" y="52" font-size="12" font-weight="bold" fill="#fbbf24">Radio R</text>
 
         <!-- Electric Field vector E -->
-        <line x1="65" y1="0" x2="135" y2="0" stroke="#34d399" stroke-width="3" marker-end="url(#mGreen)" />
+        <line x1="65" y1="0" x2="140" y2="0" stroke="#34d399" stroke-width="3" marker-end="url(#mGreen)" />
         <text x="75" y="-12" font-size="12" font-weight="bold" fill="#34d399">E⃗ (Campo)</text>
       </g>
 
       <!-- External Test Charge q (Attraction / Repulsion Force) -->
-      <g transform="translate(560, 200)">
-        <circle cx="0" cy="0" r="22" fill="#f43f5e" stroke="#fda4af" stroke-width="2.5" filter="url(#softShadow)" />
+      <g transform="translate(540, 200)">
+        <circle cx="0" cy="0" r="24" fill="#f43f5e" stroke="#fda4af" stroke-width="2.5" filter="url(#softShadow)" />
         <text x="0" y="5" font-size="13" font-weight="bold" fill="#ffffff" text-anchor="middle">q</text>
-        <line x1="-22" y1="0" x2="-80" y2="0" stroke="#facc15" stroke-width="3.5" marker-end="url(#mYellow)" />
-        <text x="-75" y="-12" font-size="12" font-weight="bold" fill="#facc15">F⃗_e (Fuerza Eléctrica)</text>
+        
+        <!-- Force vector pointing outwards (Repulsion) or inwards -->
+        <line x1="-24" y1="0" x2="-95" y2="0" stroke="#facc15" stroke-width="3.5" marker-end="url(#mYellow)" />
+        <text x="-90" y="-14" font-size="12" font-weight="bold" fill="#facc15">F⃗ₑ (Fuerza Eléctrica)</text>
+      </g>
+
+      <!-- Distance r between sphere center and charge q -->
+      <line x1="280" y1="270" x2="540" y2="270" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="3 3" />
+      <g transform="translate(385, 278)">
+        <rect width="60" height="20" rx="10" fill="#1e1b4b" stroke="#818cf8" stroke-width="1" />
+        <text x="30" y="14" font-size="11" font-weight="bold" fill="#c7d2fe" text-anchor="middle">Distancia r</text>
       </g>`;
       break;
     }

@@ -366,6 +366,7 @@ export default function App() {
                   diagram={currentSolution.diagram}
                   knowns={currentSolution.knowns}
                   unknowns={currentSolution.unknowns}
+                  problemStatement={currentSolution.problemStatement}
                 />
               </section>
 
@@ -385,6 +386,7 @@ export default function App() {
                 diagram={currentSolution.diagram}
                 knowns={currentSolution.knowns}
                 unknowns={currentSolution.unknowns}
+                problemStatement={currentSolution.problemStatement}
               />
             </div>
           )}

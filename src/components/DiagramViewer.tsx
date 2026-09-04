@@ -24,12 +24,14 @@ interface DiagramViewerProps {
   diagram?: DiagramData;
   knowns?: KnownQuantity[];
   unknowns?: UnknownQuantity[];
+  problemStatement?: string;
 }
 
 export const DiagramViewer: React.FC<DiagramViewerProps> = ({
   diagram,
   knowns = [],
   unknowns = [],
+  problemStatement,
 }) => {
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -157,6 +159,23 @@ export const DiagramViewer: React.FC<DiagramViewerProps> = ({
 
   return (
     <div className="flex flex-col h-full space-y-3 sm:space-y-3.5">
+      {/* Transcribed Problem Statement Card (Ensures user sees transcribed text right above the scheme) */}
+      {problemStatement && (
+        <div className="p-3 bg-indigo-50/90 border border-indigo-200 rounded-xl flex items-start gap-2.5 shadow-2xs">
+          <div className="p-1.5 bg-indigo-600 text-white rounded-lg shrink-0 mt-0.5">
+            <Sparkles className="w-3.5 h-3.5" />
+          </div>
+          <div className="min-w-0">
+            <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-wide block mb-0.5">
+              Enunciado Transcrito / Ingresado del Ejercicio
+            </span>
+            <p className="text-xs sm:text-sm font-medium text-slate-800 leading-snug">
+              {problemStatement}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Top Header & Mobile Action Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-2.5 border-b border-slate-100">
         <div className="flex items-center gap-2 min-w-0">
