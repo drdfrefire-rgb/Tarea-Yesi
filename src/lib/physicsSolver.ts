@@ -2,37 +2,23 @@ import { PhysicsSolution, PhysicsCategory } from '../types';
 import { generatePhysicsDiagramSVG } from './diagramGenerator';
 
 function parsePhysicsProblem(statement: string) {
-  const text = statement.toLowerCase();
-  
-  function extractValue(keywords: string[], defaultVal: number): number {
-    for (const kw of keywords) {
-      const idx = text.indexOf(kw);
-      if (idx !== -1) {
-        const sub = statement.slice(Math.max(0, idx - 15), Math.min(statement.length, idx + 25));
-        const nums = sub.match(/-?\d+(\.\d+)?/g)?.map(Number);
-        if (nums && nums.length > 0) {
-          return nums[0];
-        }
-      }
-    }
-    const allNums = statement.match(/-?\d+(\.\d+)?/g)?.map(Number);
-    if (allNums && allNums.length > 0) {
-      return allNums[0];
-    }
-    return defaultVal;
-  }
+  const allNums = statement.match(/-?\d+(\.\d+)?/g)?.map(Number) || [];
+  const n0 = allNums[0] !== undefined ? allNums[0] : 4.0;
+  const n1 = allNums[1] !== undefined ? allNums[1] : 10.0;
+  const n2 = allNums[2] !== undefined ? allNums[2] : 2.0;
 
-  const mass = extractValue(['m =', 'masa', 'kg'], 4.0);
-  const velocity = extractValue(['v =', 'velocidad', 'rapidez', 'm/s'], 10.0);
-  const acceleration = extractValue(['a =', 'aceleracion', 'm/s2', 'm/s²'], 2.0);
-  const time = extractValue(['t =', 'tiempo', 'segundos', ' s '], 3.0);
-  const distance = extractValue(['d =', 'distancia', 'espacio', 'metros', ' m '], 15.0);
-  const height = extractValue(['h =', 'altura'], 10.0);
-  const angle = extractValue(['theta', 'θ', 'angulo', 'grado'], 30.0);
-  const mu = extractValue(['mu', 'μ', 'coeficiente', 'friccion'], 0.2);
-  const force = extractValue(['f =', 'fuerza', 'newton', ' n '], 50.0);
-
-  return { mass, velocity, acceleration, time, distance, height, angle, mu, force };
+  return {
+    mass: n0,
+    velocity: n1,
+    acceleration: n2,
+    time: n1,
+    distance: n1,
+    height: n1,
+    angle: n2,
+    mu: 0.2,
+    force: n0,
+    allNums
+  };
 }
 
 export function solvePhysicsLocally(problemStatement: string, category: string): PhysicsSolution {

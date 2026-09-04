@@ -26,19 +26,27 @@ interface ParamConfig {
 }
 
 export const SimulationPanel: React.FC<SimulationPanelProps> = ({ solution }) => {
-  // Support dynamic interactive parameters for our physical models
+  // Support dynamic interactive parameters for our physical models or any custom problem
   const isInclined = solution.id === 'sample-dinamica-inclinado';
   const isProjectile = solution.id === 'sample-cinematica-parabolico';
   const isPendulum = solution.id === 'sample-energia-pendulo';
+  const isCustom = !isInclined && !isProjectile && !isPendulum;
+
+  // Extract initial values from knowns or defaults
+  const getKnownVal = (sym: string, def: number) => {
+    const found = solution.knowns.find(k => k.symbol.toLowerCase().includes(sym) || k.name.toLowerCase().includes(sym));
+    if (found && !isNaN(parseFloat(found.value))) return parseFloat(found.value);
+    return def;
+  };
 
   // Inclined plane parameters
-  const [m1, setM1] = useState(4.0);
+  const [m1, setM1] = useState(isInclined ? 4.0 : getKnownVal('m', 5.0));
   const [m2, setM2] = useState(6.0);
   const [theta, setTheta] = useState(30);
   const [muK, setMuK] = useState(0.2);
 
   // Projectile parameters
-  const [v0, setV0] = useState(25.0);
+  const [v0, setV0] = useState(isProjectile ? 25.0 : getKnownVal('v', 15.0));
   const [alpha, setAlpha] = useState(37);
   const [h0, setH0] = useState(15.0);
 
@@ -46,6 +54,12 @@ export const SimulationPanel: React.FC<SimulationPanelProps> = ({ solution }) =>
   const [mb, setMb] = useState(0.015);
   const [Mblock, setMblock] = useState(2.5);
   const [hRise, setHRise] = useState(0.08);
+
+  // Custom generic simulation parameters
+  const [customMass, setCustomMass] = useState(getKnownVal('m', 5.0));
+  const [customVel, setCustomVel] = useState(getKnownVal('v', 10.0));
+  const [customAcc, setCustomAcc] = useState(getKnownVal('a', 2.0));
+  const [customTime, setCustomTime] = useState(getKnownVal('t', 3.0));
 
   const g = 9.8;
 
@@ -56,10 +70,8 @@ export const SimulationPanel: React.FC<SimulationPanelProps> = ({ solution }) =>
     const rad = (theta * Math.PI) / 180;
     const sinT = Math.sin(rad);
     const cosT = Math.cos(rad);
-    // a = g * (m2 - m1 * sin(theta) - mu * m1 * cos(theta)) / (m1 + m2)
     const numerator = m2 - m1 * sinT - muK * m1 * cosT;
     const aCalc = (g * numerator) / (m1 + m2);
-    // T = m2 * (g - a)
     const tCalc = Math.max(0, m2 * (g - aCalc));
 
     calculatedResults = [
@@ -96,9 +108,7 @@ export const SimulationPanel: React.FC<SimulationPanelProps> = ({ solution }) =>
     const rad = (alpha * Math.PI) / 180;
     const v0x = v0 * Math.cos(rad);
     const v0y = v0 * Math.sin(rad);
-    // h_max = h0 + (v0y)^2 / (2g)
     const hMax = h0 + (v0y * v0y) / (2 * g);
-    // quadratic: -0.5*g*t^2 + v0y*t + h0 = 0 -> t = (v0y + sqrt(v0y^2 + 2*g*h0))/g
     const discriminant = v0y * v0y + 2 * g * h0;
     const tVuelo = (v0y + Math.sqrt(Math.max(0, discriminant))) / g;
     const xMax = v0x * tVuelo;
@@ -135,11 +145,8 @@ export const SimulationPanel: React.FC<SimulationPanelProps> = ({ solution }) =>
       },
     ];
   } else if (isPendulum) {
-    // V_despues = sqrt(2*g*h)
     const Vdespues = Math.sqrt(2 * g * hRise);
-    // v_bala = (m + M) * V / m
     const vBala = ((mb + Mblock) * Vdespues) / mb;
-    // Ec_inicial = 0.5 * m * v_bala^2
     const ecIni = 0.5 * mb * vBala * vBala;
     const ecFin = 0.5 * (mb + Mblock) * Vdespues * Vdespues;
     const deltaE = ecIni - ecFin;
@@ -167,6 +174,36 @@ export const SimulationPanel: React.FC<SimulationPanelProps> = ({ solution }) =>
         formula: '\\Delta E = E_{c,ini} - E_{c,fin}',
       },
     ];
+  } else {
+    // Custom generic problem simulation calculation
+    const cat = solution.category || 'dinamica';
+    if (cat === 'cinematica') {
+      const vFin = customVel + customAcc * customTime;
+      const dist = customVel * customTime + 0.5 * customAcc * customTime * customTime;
+      calculatedResults = [
+        { name: 'Velocidad final calculada', symbol: 'v', value: vFin.toFixed(2), unit: 'm/s', formula: 'v = v_0 + a \\cdot t' },
+        { name: 'Distancia recorrida', symbol: 'd', value: dist.toFixed(2), unit: 'm', formula: 'd = v_0 t + \\frac{1}{2}at^2' },
+      ];
+    } else if (cat === 'dinamica') {
+      const forceNet = customMass * customAcc;
+      const weight = customMass * g;
+      calculatedResults = [
+        { name: 'Fuerza neta', symbol: 'F_{net}', value: forceNet.toFixed(2), unit: 'N', formula: 'F = m \\cdot a' },
+        { name: 'Peso del objeto', symbol: 'P', value: weight.toFixed(2), unit: 'N', formula: 'P = m \\cdot g' },
+      ];
+    } else if (cat === 'energia_trabajo') {
+      const ek = 0.5 * customMass * customVel * customVel;
+      const ep = customMass * g * customTime;
+      calculatedResults = [
+        { name: 'Energía Cinética', symbol: 'E_k', value: ek.toFixed(2), unit: 'J', formula: 'E_k = \\frac{1}{2}m v^2' },
+        { name: 'Energía Potencial', symbol: 'E_p', value: ep.toFixed(2), unit: 'J', formula: 'E_p = m g h' },
+      ];
+    } else {
+      const momentum = customMass * customVel;
+      calculatedResults = [
+        { name: 'Momento Lineal', symbol: 'p', value: momentum.toFixed(2), unit: 'kg·m/s', formula: 'p = m \\cdot v' },
+      ];
+    }
   }
 
   const handleReset = () => {
@@ -183,6 +220,11 @@ export const SimulationPanel: React.FC<SimulationPanelProps> = ({ solution }) =>
       setMb(0.015);
       setMblock(2.5);
       setHRise(0.08);
+    } else {
+      setCustomMass(getKnownVal('m', 5.0));
+      setCustomVel(getKnownVal('v', 10.0));
+      setCustomAcc(getKnownVal('a', 2.0));
+      setCustomTime(getKnownVal('t', 3.0));
     }
   };
 
@@ -462,10 +504,100 @@ export const SimulationPanel: React.FC<SimulationPanelProps> = ({ solution }) =>
             </>
           )}
 
-          {!isInclined && !isProjectile && !isPendulum && (
-            <div className="col-span-full p-4 text-center text-xs text-slate-500 bg-slate-50 rounded-xl border border-slate-200">
-              Este ejercicio utiliza la derivación analítica general calculada por el motor de IA.
-            </div>
+          {isCustom && (
+            <>
+              {/* customMass */}
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-semibold text-slate-700">Masa (m)</span>
+                  <span className="font-mono text-xs font-bold text-indigo-700 bg-white px-1.5 py-0.5 rounded border border-slate-200">
+                    {customMass.toFixed(1)} kg
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={0.5}
+                  max={50}
+                  step={0.5}
+                  value={customMass}
+                  onChange={(e) => setCustomMass(parseFloat(e.target.value))}
+                  className="w-full accent-indigo-600 cursor-pointer h-1.5 bg-slate-200 rounded-lg"
+                />
+                <div className="flex justify-between text-[10px] text-slate-400 mt-1 font-mono">
+                  <span>0.5 kg</span>
+                  <span>50 kg</span>
+                </div>
+              </div>
+
+              {/* customVel */}
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-semibold text-slate-700">Velocidad (v)</span>
+                  <span className="font-mono text-xs font-bold text-indigo-700 bg-white px-1.5 py-0.5 rounded border border-slate-200">
+                    {customVel.toFixed(1)} m/s
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={50}
+                  step={0.5}
+                  value={customVel}
+                  onChange={(e) => setCustomVel(parseFloat(e.target.value))}
+                  className="w-full accent-indigo-600 cursor-pointer h-1.5 bg-slate-200 rounded-lg"
+                />
+                <div className="flex justify-between text-[10px] text-slate-400 mt-1 font-mono">
+                  <span>0 m/s</span>
+                  <span>50 m/s</span>
+                </div>
+              </div>
+
+              {/* customAcc */}
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-semibold text-slate-700">Aceleración (a)</span>
+                  <span className="font-mono text-xs font-bold text-indigo-700 bg-white px-1.5 py-0.5 rounded border border-slate-200">
+                    {customAcc.toFixed(1)} m/s²
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={20}
+                  step={0.5}
+                  value={customAcc}
+                  onChange={(e) => setCustomAcc(parseFloat(e.target.value))}
+                  className="w-full accent-indigo-600 cursor-pointer h-1.5 bg-slate-200 rounded-lg"
+                />
+                <div className="flex justify-between text-[10px] text-slate-400 mt-1 font-mono">
+                  <span>0 m/s²</span>
+                  <span>20 m/s²</span>
+                </div>
+              </div>
+
+              {/* customTime */}
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-semibold text-slate-700">Tiempo (t) / Altura (h)</span>
+                  <span className="font-mono text-xs font-bold text-indigo-700 bg-white px-1.5 py-0.5 rounded border border-slate-200">
+                    {customTime.toFixed(1)} s / m
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={0.5}
+                  max={30}
+                  step={0.5}
+                  value={customTime}
+                  onChange={(e) => setCustomTime(parseFloat(e.target.value))}
+                  className="w-full accent-indigo-600 cursor-pointer h-1.5 bg-slate-200 rounded-lg"
+                />
+                <div className="flex justify-between text-[10px] text-slate-400 mt-1 font-mono">
+                  <span>0.5</span>
+                  <span>30</span>
+                </div>
+              </div>
+            </>
           )}
         </div>
 

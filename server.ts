@@ -53,15 +53,10 @@ app.post('/api/solve-physics', async (req, res) => {
     if (apiKey) {
       try {
         const ai = getGenAI();
-        const systemPrompt = `Eres el profesor titular y físico teórico de mayor prestigio en JEAN LAB, experto mundial en Física General, Mecánica Analítica y Electromagnetismo.
-Tu objetivo es resolver con rigor absoluto, rigor doctoral, precisión matemática impecable y notación LaTeX avanzada cualquier problema de física que se te presente (ya sea mediante texto o mediante una imagen/esquema adjunto).
-
-INSTRUCCIONES CRÍTICAS PARA EL EXPERTO:
-1. TRANSCRIPCIÓN Y ANÁLISIS RIGUROSO: Si el usuario adjunta una imagen o texto, LEE Y TRANSCRIBE con exactitud científica el enunciado completo y formal en el campo 'problemStatement'. Jamás des respuestas genéricas ni plantillas predeterminadas: adapta cada fórmula, análisis vectorial, simplificación y cálculo matemático estrictamente al problema específico planteado.
-2. DIAGRAMA Y DCL: Proporciona una explicación técnica y detallada del Diagrama de Cuerpo Libre (DCL), ejes coordenados y fuerzas actuantes.
-3. EXTRACCIÓN DE VARIABLES: Desglosa todas las cantidades conocidas y las incógnitas con sus unidades del Sistema Internacional (SI).
-4. DERIVACIÓN PASO A PASO: Redacta deducciones formales paso a paso con ecuaciones LaTeX completas ($...$).
-5. RESULTADOS Y DISCUSIÓN FÍSICA: Proporciona valores numéricos precisos con su respectiva interpretación física, análisis de límites y advertencias de errores comunes.`;
+        const systemPrompt = `Eres el profesor titular y físico teórico más brillante de JEAN LAB, experto mundial en Física General, Mecánica Analítica y Electromagnetismo.
+INSTRUCCIÓN CRÍTICA ABSOLUTA: DEBES RESOLVER ESTRICTAMENTE EL PROBLEMA INGRESADO POR EL USUARIO O EN LA IMAGEN ADJUNTA UTILIZANDO ÚNICAMENTE LOS NÚMEROS, MASAS, VELOCIDADES, ÁNGULOS Y MAGNITUDES FÍSICAS QUE APARECEN EN EL ENUNCIADO.
+PROHIBIDO ABSOLUTAMENTE USAR DATOS FALSOS, INVENTADOS O VALORES POR DEFECTO. Si el usuario ingresa un problema con datos específicos (ej: masa de 5 kg, velocidad de 20 m/s), esos y solo esos valores numéricos deben figurar en la lista de 'knowns', en el planteamiento, en las ecuaciones LaTeX y en los resultados calculados. Si la imagen contiene un texto o esquema, léelo palabra por palabra y extrae sus datos exactos.
+Devuelve un objeto JSON estructurado que cumpla con el esquema requerido para la solución física.`;
 
         const contents: any[] = [];
         if (image && image.data && image.mimeType) {
@@ -228,37 +223,23 @@ NIVEL DE COMPLEJIDAD: ${difficultyToUse}`,
 });
 
 function parsePhysicsProblem(statement: string) {
-  const text = statement.toLowerCase();
-  
-  function extractValue(keywords: string[], defaultVal: number): number {
-    for (const kw of keywords) {
-      const idx = text.indexOf(kw);
-      if (idx !== -1) {
-        const sub = statement.slice(Math.max(0, idx - 15), Math.min(statement.length, idx + 25));
-        const nums = sub.match(/-?\d+(\.\d+)?/g)?.map(Number);
-        if (nums && nums.length > 0) {
-          return nums[0];
-        }
-      }
-    }
-    const allNums = statement.match(/-?\d+(\.\d+)?/g)?.map(Number);
-    if (allNums && allNums.length > 0) {
-      return allNums[0];
-    }
-    return defaultVal;
-  }
+  const allNums = statement.match(/-?\d+(\.\d+)?/g)?.map(Number) || [];
+  const n0 = allNums[0] !== undefined ? allNums[0] : 4.0;
+  const n1 = allNums[1] !== undefined ? allNums[1] : 10.0;
+  const n2 = allNums[2] !== undefined ? allNums[2] : 2.0;
 
-  const mass = extractValue(['m =', 'masa', 'kg'], 4.0);
-  const velocity = extractValue(['v =', 'velocidad', 'rapidez', 'm/s'], 10.0);
-  const acceleration = extractValue(['a =', 'aceleracion', 'm/s2', 'm/s²'], 2.0);
-  const time = extractValue(['t =', 'tiempo', 'segundos', ' s '], 3.0);
-  const distance = extractValue(['d =', 'distancia', 'espacio', 'metros', ' m '], 15.0);
-  const height = extractValue(['h =', 'altura'], 10.0);
-  const angle = extractValue(['theta', 'θ', 'angulo', 'grado'], 30.0);
-  const mu = extractValue(['mu', 'μ', 'coeficiente', 'friccion'], 0.2);
-  const force = extractValue(['f =', 'fuerza', 'newton', ' n '], 50.0);
-
-  return { mass, velocity, acceleration, time, distance, height, angle, mu, force };
+  return {
+    mass: n0,
+    velocity: n1,
+    acceleration: n2,
+    time: n1,
+    distance: n1,
+    height: n1,
+    angle: n2,
+    mu: 0.2,
+    force: n0,
+    allNums
+  };
 }
 
 // Robust local dynamic physics solver with real physics equations
