@@ -63,14 +63,14 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="flex flex-col leading-none min-w-0">
             <div className="flex items-center gap-1.5">
               <span className="font-extrabold tracking-tight text-sm sm:text-base text-white truncate">
-                PhysicaLab
+                JEAN LAB
               </span>
               <span className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-indigo-500/30 text-indigo-200 border border-indigo-400/20">
                 PRO
               </span>
             </div>
             <span className="hidden sm:inline text-[10px] text-indigo-300 font-medium tracking-wide">
-              Solucionador & Tutor de Física
+              Laboratorio & Solucionador de Física
             </span>
           </div>
         </div>
@@ -177,9 +177,9 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* User avatar badge */}
         <div
           className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-indigo-700 border-2 border-indigo-400 flex items-center justify-center text-[10px] sm:text-xs font-bold text-indigo-100 shrink-0 select-none shadow-xs"
-          title="Sesión de Física Activa (PhysicaLab)"
+          title="Sesión de Física Activa (JEAN LAB)"
         >
-          PL
+          JL
         </div>
       </div>
     </nav>
