@@ -52,14 +52,15 @@ app.post('/api/solve-physics', async (req, res) => {
     if (apiKey) {
       try {
         const ai = getGenAI();
-        const systemPrompt = `Eres un profesor universitario experto en Física General y Mecánica.
-Resuelve el ejercicio con rigor didáctico, precisión matemática y formulas LaTeX.
+        const systemPrompt = `Eres el motor de inteligencia artificial física de JEAN LAB, un profesor universitario titular de Física General, Mecánica y Ciencias Exactas.
+Tu objetivo es resolver con rigor absoluto, precisión matemática y notación LaTeX cualquier problema de física que se te presente (ya sea mediante texto o mediante una imagen adjunta).
 
-INSTRUCCIONES:
-1. ESQUEMA / DIAGRAMA: Proporciona un título descriptivo y explicación del DCL.
-2. CANTIDADES: Desglosa cantidades conocidas e incógnitas.
-3. DERIVACIÓN: Pasos secuenciales con fórmulas LaTeX ($...$).
-4. RESULTADOS FINALES: Valores numéricos con unidades.`;
+INSTRUCCIONES CRÍTICAS:
+1. ANÁLISIS DE IMAGEN / TEXTO: Si se proporciona una imagen o texto, LEE Y TRANSCRIBE con exactitud científica el enunciado completo del problema en el campo 'problemStatement'. No des respuestas genéricas: personaliza cada fórmula, valor y cálculo al problema específico planteado.
+2. DIAGRAMA Y DCL: Explica detalladamente el diagrama de cuerpo libre y el sistema de coordenadas.
+3. DATOS Y VARIABLES: Extrae minuciosamente todas las cantidades conocidas y las incógnitas a determinar con sus unidades correctas del Sistema Internacional.
+4. DERIVACIÓN PASO A PASO: Escribe los pasos formales de derivación matemática usando ecuaciones LaTeX avanzadas ($...$).
+5. RESULTADOS Y DISCUSIÓN: Proporciona los valores numéricos finales con su interpretación física clara y consejos para evitar errores comunes.`;
 
         const contents: any[] = [];
         if (image && image.data && image.mimeType) {
@@ -76,7 +77,7 @@ INSTRUCCIONES:
         }
 
         contents.push({
-          text: `Resuelve este ejercicio de física:
+          text: `Analiza detalladamente este ejercicio de física (si se adjunta una imagen, transcribe y formula con precisión académica el enunciado exacto en formato formal de física):
 ENUNCIADO: ${statementToUse}
 CATEGORÍA: ${categoryToUse}`,
         });
@@ -87,6 +88,7 @@ CATEGORÍA: ${categoryToUse}`,
           responseSchema: {
             type: Type.OBJECT,
             properties: {
+              problemStatement: { type: Type.STRING, description: 'Enunciado físico exacto transcrito y formateado profesionalmente' },
               title: { type: Type.STRING },
               category: { type: Type.STRING },
               difficulty: { type: Type.STRING },
@@ -161,7 +163,7 @@ CATEGORÍA: ${categoryToUse}`,
               physicalDiscussion: { type: Type.STRING },
               commonMistakesOrTips: { type: Type.ARRAY, items: { type: Type.STRING } },
             },
-            required: ['title', 'category', 'difficulty', 'diagram', 'knowns', 'unknowns', 'derivationSteps', 'finalAnswers'],
+            required: ['problemStatement', 'title', 'category', 'difficulty', 'diagram', 'knowns', 'unknowns', 'derivationSteps', 'finalAnswers'],
           },
         };
 
@@ -193,7 +195,7 @@ CATEGORÍA: ${categoryToUse}`,
     }
 
     solutionData.id = 'sol-' + Date.now();
-    solutionData.problemStatement = statementToUse;
+    solutionData.problemStatement = solutionData.problemStatement || statementToUse;
     solutionData.createdAt = Date.now();
 
     if (!solutionData.diagram) {
@@ -206,7 +208,7 @@ CATEGORÍA: ${categoryToUse}`,
     const proceduralSvg = generatePhysicsDiagramSVG({
       title: solutionData.title,
       category: solutionData.category || categoryToUse,
-      problemStatement: statementToUse,
+      problemStatement: solutionData.problemStatement,
       knowns: solutionData.knowns || [],
       unknowns: solutionData.unknowns || [],
     });
