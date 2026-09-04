@@ -1,0 +1,6 @@
+{
+  "name": "Solucionador de Física",
+  "description": "PhysicaLab: Plataforma interactiva para la resolución de ejercicios de física con esquemas gráficos vectoriales de cantidades conocidas e incógnitas, derivación paso a paso y tutor conceptual inteligente.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

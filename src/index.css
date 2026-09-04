@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+/* HTML & Body touch scroll ergonomics */
+html, body {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* KaTeX responsive sizing & smooth scroll for mobile */
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.25rem 0;
+  margin: 0.35rem 0 !important;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+
+.katex {
+  font-size: 1em;
+  text-rendering: auto;
+  max-width: 100%;
+}
+
+@media (max-width: 640px) {
+  .katex {
+    font-size: 0.88em;
+  }
+  .katex-display {
+    padding: 0.15rem 0;
+    margin: 0.25rem 0 !important;
+  }
+}
+
+/* Custom subtle scrollbar for code/math containers */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.7);
+}
+
+/* Print optimizations */
+@media print {
+  header, nav, aside, footer, button, .no-print {
+    display: none !important;
+  }
+  
+  body, #root, .h-screen, .min-h-screen, .h-full, .overflow-hidden, .overflow-y-auto {
+    height: auto !important;
+    overflow: visible !important;
+    background: white !important;
+    color: black !important;
+    position: static !important;
+  }
+  
+  main {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* Prevent awkward page breaks */
+  .break-inside-avoid, section, svg {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+}
+
+
