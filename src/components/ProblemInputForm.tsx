@@ -115,6 +115,7 @@ export const ProblemInputForm: React.FC<ProblemInputFormProps> = ({
   });
 
   const [imageFile, setImageFile] = useState<{ base64: string; mimeType: string; previewUrl: string } | null>(null);
+  const [difficulty, setDifficulty] = useState<'Básico' | 'Intermedio' | 'Avanzado'>('Intermedio');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [savedDraftToast, setSavedDraftToast] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -313,6 +314,7 @@ export const ProblemInputForm: React.FC<ProblemInputFormProps> = ({
       const payload: any = {
         problemStatement: statement.trim(),
         category: selectedCategory,
+        difficulty,
       };
 
       if (imageFile) {
@@ -490,6 +492,29 @@ export const ProblemInputForm: React.FC<ProblemInputFormProps> = ({
               >
                 <span className="text-sm sm:text-xs">{cat.icon}</span>
                 <span className="truncate">{cat.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Expert Parameter: Difficulty */}
+        <div className="pt-2 border-t border-slate-100">
+          <label className="block text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+            Nivel de Rigor y Complejidad
+          </label>
+          <div className="flex items-center gap-1.5">
+            {(['Básico', 'Intermedio', 'Avanzado'] as const).map((lvl) => (
+              <button
+                key={lvl}
+                type="button"
+                onClick={() => setDifficulty(lvl)}
+                className={`flex-1 py-1.5 px-2 text-[11px] font-semibold rounded-xl border transition-all active:scale-95 ${
+                  difficulty === lvl
+                    ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                    : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                }`}
+              >
+                {lvl}
               </button>
             ))}
           </div>

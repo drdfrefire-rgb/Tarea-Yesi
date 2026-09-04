@@ -114,6 +114,7 @@ export const DiagramViewer: React.FC<DiagramViewerProps> = ({
   };
 
   const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    e.preventDefault();
     if (e.touches.length === 1 && isDragging) {
       setPan({
         x: e.touches[0].clientX - dragStart.x,
@@ -138,6 +139,7 @@ export const DiagramViewer: React.FC<DiagramViewerProps> = ({
   // Mouse wheel zoom
   const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     e.preventDefault();
+    e.stopPropagation();
     const zoomDelta = e.deltaY < 0 ? 0.15 : -0.15;
     setZoom((prev) => Math.min(Math.max(prev + zoomDelta, 0.5), 3.5));
   };
