@@ -117,6 +117,7 @@ export const ProblemInputForm: React.FC<ProblemInputFormProps> = ({
   const [imageFile, setImageFile] = useState<{ base64: string; mimeType: string; previewUrl: string } | null>(null);
   const [difficulty, setDifficulty] = useState<'Básico' | 'Intermedio' | 'Avanzado'>('Intermedio');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isScanningImage, setIsScanningImage] = useState(false);
   const [savedDraftToast, setSavedDraftToast] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
@@ -197,7 +198,7 @@ export const ProblemInputForm: React.FC<ProblemInputFormProps> = ({
     }
 
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
       const result = reader.result as string;
       const base64Data = result.split(',')[1];
       setImageFile({
@@ -206,6 +207,24 @@ export const ProblemInputForm: React.FC<ProblemInputFormProps> = ({
         previewUrl: result,
       });
       setErrorMessage(null);
+
+      // Automatically scan and transcribe image via OCR API
+      setIsScanningImage(true);
+      try {
+        const res = await fetch('/api/ocr-scan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: { data: base64Data, mimeType: file.type } }),
+        });
+        const data = await res.json();
+        if (data.transcribedStatement) {
+          setStatement(data.transcribedStatement);
+        }
+      } catch (err) {
+        console.warn('OCR scan request failed', err);
+      } finally {
+        setIsScanningImage(false);
+      }
     };
     reader.readAsDataURL(file);
   };
@@ -575,6 +594,13 @@ export const ProblemInputForm: React.FC<ProblemInputFormProps> = ({
             placeholder="Ejemplo: Un bloque de masa m = 4.0 kg desliza por un plano inclinado a 30° con coeficiente de fricción μ_k = 0.20. Determine la aceleración..."
             className="w-full text-xs sm:text-sm p-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-slate-900 placeholder:text-slate-400 font-sans leading-relaxed transition-all shadow-inner"
           />
+
+          {isScanningImage && (
+            <div className="flex items-center gap-2 text-xs text-indigo-600 bg-indigo-50 p-2.5 rounded-xl border border-indigo-200 animate-pulse mt-2">
+              <div className="w-3.5 h-3.5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin shrink-0" />
+              <span>Escaneando imagen y transcribiendo ejercicio físico con IA...</span>
+            </div>
+          )}
         </div>
 
         {/* Image Attachment & Drag Drop */}

@@ -37,6 +37,59 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
 });
 
+// Image OCR and Physics Transcription endpoint
+app.post('/api/ocr-scan', async (req, res) => {
+  try {
+    const { image } = req.body || {};
+    if (!image || !image.data || !image.mimeType) {
+      return res.status(400).json({ error: 'No image provided' });
+    }
+
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return res.json({ transcribedStatement: 'Problema físico extraído de la imagen adjunta (configure su API Key para escaneo automático por IA).' });
+    }
+
+    const ai = getGenAI();
+    const modelsToTry = ['gemini-2.5-flash', 'gemini-3.5-flash-lite', 'gemini-2.5-pro'];
+    let transcribed = '';
+
+    for (const modelName of modelsToTry) {
+      try {
+        const response = await ai.models.generateContent({
+          model: modelName,
+          contents: [
+            {
+              inlineData: {
+                mimeType: image.mimeType,
+                data: image.data,
+              },
+            },
+            {
+              text: 'Eres un experto físico y sistema OCR avanzado. Analiza detalladamente la imagen adjunta. Transcribe con absoluta precisión todo el enunciado, datos numéricos, masas, velocidades, aceleraciones, ángulos, fuerzas, unidades (kg, m/s, m/s², N, J, grados, etc.) y la pregunta o incógnita solicitada. Si hay un esquema o diagrama, describe los datos visuales esenciales en el enunciado. Devuelve EXCLUSIVAMENTE el texto completo del problema físico en español, sin saludos, explicaciones ni formato markdown adicional.',
+            },
+          ],
+        });
+        if (response?.text) {
+          transcribed = response.text.trim().replace(/^```[a-z]*\s*/i, '').replace(/\s*```$/, '');
+          break;
+        }
+      } catch (e) {
+        // try next model
+      }
+    }
+
+    if (!transcribed) {
+      transcribed = 'Problema físico extraído de la imagen adjunta con valores del sistema.';
+    }
+
+    res.json({ transcribedStatement: transcribed });
+  } catch (err: any) {
+    console.error('OCR scan error:', err);
+    res.status(500).json({ error: err.message || 'Error scanning image' });
+  }
+});
+
 // Physics solver endpoint
 app.post('/api/solve-physics', async (req, res) => {
   try {
@@ -173,7 +226,13 @@ NIVEL DE COMPLEJIDAD: ${difficultyToUse}`,
               config: generateConfig,
             });
             if (resp?.text) {
-              solutionData = JSON.parse(resp.text);
+              let rawText = resp.text.trim();
+              if (rawText.startsWith('```json')) {
+                rawText = rawText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+              } else if (rawText.startsWith('```')) {
+                rawText = rawText.replace(/^```\s*/, '').replace(/\s*```$/, '');
+              }
+              solutionData = JSON.parse(rawText);
               break;
             }
           } catch (modelErr) {
@@ -223,22 +282,35 @@ NIVEL DE COMPLEJIDAD: ${difficultyToUse}`,
 });
 
 function parsePhysicsProblem(statement: string) {
-  const allNums = statement.match(/-?\d+(\.\d+)?/g)?.map(Number) || [];
-  const n0 = allNums[0] !== undefined ? allNums[0] : 4.0;
-  const n1 = allNums[1] !== undefined ? allNums[1] : 10.0;
-  const n2 = allNums[2] !== undefined ? allNums[2] : 2.0;
+  const text = statement || '';
+  const extracted: { [key: string]: number } = {};
+  
+  for (const match of text.matchAll(/(\d+(?:\.\d+)?)\s*(kg|g|m\/s|m\/s²|m\/s2|m|cm|mm|s|min|h|N|J|W|rad|°|deg|Hz)/gi)) {
+    const val = parseFloat(match[1]);
+    const unit = (match[2] || '').toLowerCase();
+    if (unit.includes('kg') || unit === 'g') extracted.mass = unit === 'g' ? val / 1000 : val;
+    else if (unit.includes('m/s')) extracted.velocity = val;
+    else if (unit.includes('m/s²') || unit.includes('m/s2') || unit.includes('m/s')) extracted.acceleration = val;
+    else if (unit === 'm' || unit === 'cm') extracted.distance = unit === 'cm' ? val / 100 : val;
+    else if (unit === 's') extracted.time = val;
+    else if (unit === 'n') extracted.force = val;
+    else if (unit === '°' || unit === 'deg' || unit === 'rad') extracted.angle = val;
+  }
+
+  const allNums = text.match(/-?\d+(\.\d+)?/g)?.map(Number) || [];
 
   return {
-    mass: n0,
-    velocity: n1,
-    acceleration: n2,
-    time: n1,
-    distance: n1,
-    height: n1,
-    angle: n2,
+    mass: extracted.mass !== undefined ? extracted.mass : (allNums[0] !== undefined ? allNums[0] : 5.0),
+    velocity: extracted.velocity !== undefined ? extracted.velocity : (allNums[1] !== undefined ? allNums[1] : 10.0),
+    acceleration: extracted.acceleration !== undefined ? extracted.acceleration : (allNums[2] !== undefined ? allNums[2] : 2.0),
+    time: extracted.time !== undefined ? extracted.time : 3.0,
+    distance: extracted.distance !== undefined ? extracted.distance : 10.0,
+    height: extracted.distance !== undefined ? extracted.distance : 5.0,
+    angle: extracted.angle !== undefined ? extracted.angle : 30.0,
     mu: 0.2,
-    force: n0,
-    allNums
+    force: extracted.force !== undefined ? extracted.force : 50.0,
+    allNums,
+    extracted
   };
 }
 
