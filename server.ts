@@ -53,7 +53,7 @@ app.post('/api/ocr-scan', async (req, res) => {
     }
 
     const ai = getGenAI();
-    const modelsToTry = ['gemini-2.5-flash', 'gemini-3.5-flash-lite', 'gemini-2.5-pro', 'gemini-1.5-flash'];
+    const modelsToTry = ['gemini-3.5-flash-lite', 'gemini-2.0-flash', 'gemini-1.5-flash'];
     let transcribed = '';
 
     for (const modelName of modelsToTry) {
@@ -68,7 +68,7 @@ app.post('/api/ocr-scan', async (req, res) => {
               },
             },
             {
-              text: 'Eres un profesor de física y sistema OCR de alta precisión. Analiza esta imagen de un problema o diagrama de física. Extrae y transcribe íntegramente el enunciado formal en español, incluyendo todos los valores numéricos exactos (masas, velocidades, aceleraciones, ángulos, fuerzas, distancias), unidades físicas (kg, m/s, m/s², N, J, grados) y la incógnita que se pide calcular. Devuelve únicamente el texto plano del enunciado físico, sin formato markdown ni introducciones.',
+              text: 'Eres un profesor de física y sistema OCR de alta precisión. Analiza esta imagen de un problema o diagrama de física. Extrae y transcribe íntegramente el enunciado formal en español, incluyendo todos los valores numéricos exactos, unidades físicas y la incógnita. OBLIGATORIO: Transcribe todas las expresiones matemáticas, fórmulas, variables y ecuaciones utilizando estrictamente etiquetas de LaTeX (por ejemplo, $$ \\rho = \\rho_0(a - r/b) $$, $r < R$, $r > R$). Devuelve únicamente el texto plano con notación LaTeX.',
             },
           ],
         });
@@ -108,7 +108,7 @@ app.post('/api/solve-physics', async (req, res) => {
         try {
           const ai = getGenAI();
           const ocrResp = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-3.6-flash',
             contents: [
               {
                 inlineData: {
@@ -261,7 +261,7 @@ NIVEL DE COMPLEJIDAD: ${difficultyToUse}`,
           },
         };
 
-        const CANDIDATE_MODELS = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+        const CANDIDATE_MODELS = ['gemini-3.5-flash-lite', 'gemini-2.0-flash', 'gemini-1.5-flash'];
         for (const modelName of CANDIDATE_MODELS) {
           try {
             const resp = await ai.models.generateContent({
@@ -501,7 +501,7 @@ app.post('/api/ask-followup', async (req, res) => {
     if (apiKey) {
       try {
         const ai = getGenAI();
-        const CANDIDATE_MODELS = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+        const CANDIDATE_MODELS = ['gemini-3.5-flash-lite', 'gemini-2.0-flash', 'gemini-1.5-flash'];
         
         for (const modelName of CANDIDATE_MODELS) {
           try {
@@ -539,6 +539,109 @@ Responde con precisión física, citando las leyes o fórmulas pertinentes en fo
     console.error('Error in /api/ask-followup:', error);
     return res.json({
       answer: `Hola, soy tu tutor de **JEAN LAB**. Analizando tu consulta, te sugiero revisar las ecuaciones de equilibrio y descomposición vectorial planteadas en la derivación integral. ¡Mucho éxito con tu estudio!`,
+    });
+  }
+});
+
+// Endpoint for frequent error analysis and targeted corrective lessons
+app.post('/api/analyze-errors', async (req, res) => {
+  try {
+    const { problemTitle, problemStatement, category, derivationSummary } = req.body || {};
+
+    let analysisResult = null;
+
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (apiKey) {
+      try {
+        const ai = getGenAI();
+        const CANDIDATE_MODELS = ['gemini-3.5-flash-lite', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+        
+        for (const modelName of CANDIDATE_MODELS) {
+          try {
+            const resp = await ai.models.generateContent({
+              model: modelName,
+              contents: `Actúas como un profesor y experto en didáctica de la física en JEAN LAB.
+Analiza el siguiente problema de física (${problemTitle || 'Problema'}, categoría: ${category || 'general'}):
+Enunciado: "${problemStatement || ''}"
+Resumen de derivación: "${derivationSummary || ''}"
+
+Identifica 3 errores frecuentes y típicos que los estudiantes cometen en este tipo de ejercicios (por ejemplo: errores de signos en la descomposición vectorial o ley de Gauss, confusiones en unidades del Sistema Internacional, inversión en límites de integración, omisión de constantes fundamentales).
+
+Devuelve tu respuesta en formato JSON estrictamente válido con la siguiente estructura exacta:
+{
+  "errorPatterns": [
+    {
+      "errorType": "Nombre claro del error frecuente (ej. Inversión de signo en proyección vectorial)",
+      "description": "Explicación detallada de por qué ocurre este error común.",
+      "impact": "Cómo afecta al resultado numérico o simbólico final.",
+      "correctiveLesson": "Lección breve y precisa con fórmulas LaTeX ($...$) para corregirlo y evitarlo."
+    }
+  ],
+  "quickTips": [
+    "Consejo rápido 1",
+    "Consejo rápido 2"
+  ]
+}`,
+            });
+            if (resp?.text) {
+              const textClean = resp.text.trim().replace(/^```[a-z]*\s*/i, '').replace(/\s*```$/, '');
+              const parsed = JSON.parse(textClean);
+              if (parsed && Array.isArray(parsed.errorPatterns)) {
+                analysisResult = parsed;
+                break;
+              }
+            }
+          } catch (mErr) {
+            console.warn(`Model ${modelName} analyze-errors failed:`, mErr);
+          }
+        }
+      } catch (e) {
+        console.warn('AI error analysis error:', e);
+      }
+    }
+
+    if (!analysisResult) {
+      analysisResult = {
+        errorPatterns: [
+          {
+            errorType: 'Confusión de signos en la convención de ejes o fuerzas',
+            description: 'Es muy común asignar un signo positivo a fuerzas que actúan en sentido contrario al movimiento o hacia el centro de curvatura.',
+            impact: 'Provoca que la aceleración o la magnitud calculada tenga el sentido invertido.',
+            correctiveLesson: 'Establece siempre un sistema de coordenadas explícito al inicio del DCL y verifica que la suma de fuerzas $\\sum \\vec{F} = m \\vec{a}$ respete la dirección vectorial.'
+          },
+          {
+            errorType: 'Inconsistencia de unidades en el S.I.',
+            description: 'Operar mezclando gramos con kilogramos, centímetros con metros o minutos con segundos sin conversión previa.',
+            impact: 'Genera errores de órdenes de magnitud descomunales (factores de $10^2$ o $10^3$).',
+            correctiveLesson: 'Realiza siempre una conversión sistemática de todas las magnitudes al Sistema Internacional (kg, m, s, N, J) antes de sustituir valores numéricos en las fórmulas.'
+          },
+          {
+            errorType: 'Omisión de constantes físicas o límites de integración',
+            description: 'Olvidar la constante de permitividad $\\varepsilon_0$, permeabilidad $\\mu_0$ o evaluar mal los límites inferior y superior en integrales definidas.',
+            impact: 'Anula la validez del teorema de Gauss o del cálculo del flujo/campo.',
+            correctiveLesson: 'Verifica las dimensiones de cada término y asegúrate de que los límites de la integral correspondan exactamente a la superficie gaussiana cerrada o al radio interior/exterior.'
+          }
+        ],
+        quickTips: [
+          'Dibuja siempre el diagrama de cuerpo libre (DCL) antes de plantear las ecuaciones algebraicas.',
+          'Comprueba el análisis dimensional (ecuación de dimensiones) de la fórmula simbólica antes de realizar el cálculo numérico.'
+        ]
+      };
+    }
+
+    return res.json(analysisResult);
+  } catch (error: any) {
+    console.error('Error in /api/analyze-errors:', error);
+    return res.json({
+      errorPatterns: [
+        {
+          errorType: 'Errores comunes en formulación algebraica',
+          description: 'Despejes incorrectos o pérdida de factores al simplificar variables.',
+          impact: 'Invalida la fórmula simbólica obtenida.',
+          correctiveLesson: 'Opera de forma estrictamente simbólica hasta el último paso antes de introducir los valores numéricos.'
+        }
+      ],
+      quickTips: ['Revisa cada paso algebraico con atención.']
     });
   }
 });

@@ -190,19 +190,22 @@ export const DerivationViewer: React.FC<DerivationViewerProps> = ({ solution, on
             {safeAnswers.map((ans, idx) => (
               <div
                 key={idx}
-                className="bg-emerald-50/50 rounded-xl p-3 sm:p-3.5 border border-emerald-200 flex flex-col justify-between"
+                className="bg-emerald-50/70 rounded-xl p-4 border border-emerald-300/80 flex flex-col justify-between shadow-2xs space-y-2.5"
               >
-                <div className="flex items-start justify-between gap-2 mb-1.5">
-                  <span className="text-xs font-semibold text-slate-800">{ans.name}</span>
-                  <span className="font-mono text-sm sm:text-base font-bold text-emerald-700 shrink-0">
-                    {ans.value} {ans.unit}
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>{ans.name}</span>
+                  </span>
+                  <span className="text-[10px] font-mono bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded border border-emerald-300 font-bold">
+                    {ans.unit}
                   </span>
                 </div>
-                <div className="text-[11px] text-slate-600 overflow-x-auto py-0.5">
-                  <MathView math={`${ans.symbol} = ${ans.value} ${ans.unit}`} />
+                <div className="bg-white rounded-lg p-3 border border-emerald-200 text-center overflow-x-auto shadow-2xs">
+                  <MathView math={`${ans.symbol} = ${ans.value} \\text{ ${ans.unit}}`} />
                 </div>
                 {ans.interpretation && (
-                  <p className="text-[11px] text-slate-600 mt-1.5 pt-1.5 border-t border-emerald-200/60 leading-tight">
+                  <p className="text-[11px] text-slate-600 pt-1.5 border-t border-emerald-200/60 leading-relaxed">
                     {ans.interpretation}
                   </p>
                 )}

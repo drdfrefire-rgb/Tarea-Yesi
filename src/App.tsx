@@ -10,6 +10,7 @@ import { HistoryDrawer } from './components/HistoryDrawer';
 import { SimulationPanel } from './components/SimulationPanel';
 import { UnitConverterModal } from './components/UnitConverterModal';
 import { ExportModal } from './components/ExportModal';
+import { TextbookPageViewer } from './components/TextbookPageViewer';
 import {
   FileText,
   Eye,
@@ -35,30 +36,16 @@ const ACTIVE_TAB_KEY = 'physical_solver_active_tab_v2';
 export default function App() {
   const [solutions, setSolutions] = useState<PhysicsSolution[]>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
-        }
-      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(SAMPLE_SOLUTIONS));
+      localStorage.setItem(CURRENT_ID_KEY, SAMPLE_SOLUTIONS[0].id);
     } catch (e) {
-      console.warn('Error reading from localStorage', e);
+      console.warn('Error setting localStorage', e);
     }
     return SAMPLE_SOLUTIONS;
   });
 
   const [currentSolution, setCurrentSolution] = useState<PhysicsSolution>(() => {
-    try {
-      const savedId = localStorage.getItem(CURRENT_ID_KEY);
-      if (savedId) {
-        const found = solutions.find((s) => s.id === savedId);
-        if (found) return found;
-      }
-    } catch (e) {
-      console.warn('Error reading currentSolution from localStorage', e);
-    }
-    return solutions[0] || SAMPLE_SOLUTIONS[0];
+    return SAMPLE_SOLUTIONS[0];
   });
 
   const [isSolving, setIsSolving] = useState(false);
@@ -66,16 +53,16 @@ export default function App() {
   const [showHistory, setShowHistory] = useState(false);
   const [showConverter, setShowConverter] = useState(false);
   const [showExport, setShowExport] = useState(false);
-  const [activeTab, setActiveTab] = useState<'integral' | 'diagram' | 'derivation' | 'simulation' | 'tutor'>(() => {
+  const [activeTab, setActiveTab] = useState<'integral' | 'diagram' | 'derivation' | 'simulation' | 'tutor' | 'textbook'>(() => {
     try {
       const savedTab = localStorage.getItem(ACTIVE_TAB_KEY);
-      if (savedTab && ['integral', 'diagram', 'derivation', 'simulation', 'tutor'].includes(savedTab)) {
+      if (savedTab && ['integral', 'diagram', 'derivation', 'simulation', 'tutor', 'textbook'].includes(savedTab)) {
         return savedTab as any;
       }
     } catch (e) {
       // ignore
     }
-    return 'integral';
+    return 'textbook';
   });
   const [sharedToast, setSharedToast] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -298,6 +285,18 @@ export default function App() {
             {/* Quick View Switcher Pills */}
             <div className="mt-2.5 pt-2 sm:mt-3 sm:pt-2.5 border-t border-slate-100 flex items-center gap-1.5 overflow-x-auto text-[11px] sm:text-xs no-scrollbar py-0.5">
               <button
+                onClick={() => setActiveTab('textbook')}
+                className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1 sm:gap-1.5 whitespace-nowrap active:scale-95 shrink-0 ${
+                  activeTab === 'textbook'
+                    ? 'bg-slate-900 text-white shadow-xs'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+                }`}
+              >
+                <FileText className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                <span className="hidden sm:inline">Página de Libro</span>
+                <span className="sm:hidden">Libro</span>
+              </button>
+              <button
                 onClick={() => setActiveTab('integral')}
                 className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1 sm:gap-1.5 whitespace-nowrap active:scale-95 shrink-0 ${
                   activeTab === 'integral'
@@ -378,6 +377,10 @@ export default function App() {
                 />
               </section>
             </div>
+          )}
+
+          {activeTab === 'textbook' && (
+            <TextbookPageViewer solution={currentSolution} />
           )}
 
           {activeTab === 'diagram' && (

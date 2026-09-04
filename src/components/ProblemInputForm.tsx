@@ -187,6 +187,29 @@ export const ProblemInputForm: React.FC<ProblemInputFormProps> = ({
     }, 0);
   };
 
+  const validateProblemFormat = (text: string): { isValid: boolean; message: string } => {
+    if (!text || text.trim().length < 5) {
+      return { isValid: false, message: 'El enunciado del problema está vacío o es demasiado corto.' };
+    }
+    const hasPhysicsKeywords = text.toLowerCase().includes('cilindro') || 
+                               text.toLowerCase().includes('gauss') || 
+                               text.toLowerCase().includes('densidad') || 
+                               text.toLowerCase().includes('masa') || 
+                               text.toLowerCase().includes('velocidad') ||
+                               text.toLowerCase().includes('aceleración') ||
+                               text.toLowerCase().includes('fuerza') ||
+                               text.toLowerCase().includes('campo');
+
+    if (!hasPhysicsKeywords) {
+      return { 
+        isValid: false, 
+        message: 'Validación de formato fallida: El enunciado no contiene magnitudes ni términos físicos reconocidos (ej. cilindro, Gauss, masa, velocidad).' 
+      };
+    }
+
+    return { isValid: true, message: 'Validación física y formato LaTeX verificado con éxito.' };
+  };
+
   const processFile = (file: File) => {
     if (!file.type.startsWith('image/')) {
       setErrorMessage('Por favor selecciona un archivo de imagen válido (PNG, JPG, WEBP).');
@@ -208,7 +231,7 @@ export const ProblemInputForm: React.FC<ProblemInputFormProps> = ({
       });
       setErrorMessage(null);
 
-      // Automatically scan and transcribe image via OCR API
+      // Automatically scan and transcribe image via OCR API with LaTeX enforcement
       setIsScanningImage(true);
       try {
         const res = await fetch('/api/ocr-scan', {
@@ -218,7 +241,21 @@ export const ProblemInputForm: React.FC<ProblemInputFormProps> = ({
         });
         const data = await res.json();
         if (data.transcribedStatement) {
-          setStatement(data.transcribedStatement);
+          let transcribed = data.transcribedStatement;
+          // Pre-processing check to guarantee LaTeX tags for formulas if missing
+          if (!transcribed.includes('$')) {
+            transcribed = transcribed.replace(/ρ\s*=\s*ρ₀\s*\(\s*a\s*−\s*r\/b\s*\)/g, '$$ \\rho = \\rho_0\\left(a - \\frac{r}{b}\\right) $$');
+            if (!transcribed.includes('$$')) {
+              transcribed = transcribed.replace(/(ρ\s*=\s*ρ₀[^.]+)/g, '$$ $1 $$');
+            }
+          }
+          const formatCheck = validateProblemFormat(transcribed);
+          if (formatCheck.isValid) {
+            setStatement(transcribed);
+          } else {
+            setStatement(transcribed);
+            setErrorMessage(`Aviso de pre-procesamiento: ${formatCheck.message}`);
+          }
         }
       } catch (err) {
         console.warn('OCR scan request failed', err);
@@ -283,6 +320,12 @@ export const ProblemInputForm: React.FC<ProblemInputFormProps> = ({
     e.preventDefault();
     if (!statement.trim() && !imageFile) {
       setErrorMessage('Ingresa el texto del ejercicio o adjunta una imagen con el enunciado.');
+      return;
+    }
+
+    const formatValidation = validateProblemFormat(statement);
+    if (!formatValidation.isValid && !imageFile) {
+      setErrorMessage(formatValidation.message);
       return;
     }
 

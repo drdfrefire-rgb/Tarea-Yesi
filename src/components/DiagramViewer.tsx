@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { KnownQuantity, UnknownQuantity, DiagramData } from '../types';
 import { generatePhysicsDiagramSVG, sanitizeSvgCode } from '../lib/diagramGenerator';
+import { MixedTextWithMath } from './MathView';
 import {
   CheckCircle2,
   HelpCircle,
@@ -462,14 +463,14 @@ export const DiagramViewer: React.FC<DiagramViewerProps> = ({
                         {u.name}
                       </span>
                       <span className="text-[10px] text-slate-500 font-mono block truncate">
-                        Símbolo: <span className="text-amber-700 font-semibold">{u.symbol}</span>
+                        Símbolo: <span className="text-amber-700 font-semibold"><MixedTextWithMath text={`$${u.symbol}$`} /></span>
                         {u.notes && ` • ${u.notes}`}
                       </span>
                     </div>
                     {u.calculatedValue ? (
                       <span className="font-mono font-bold text-indigo-950 bg-indigo-50 px-2 py-1 rounded border border-indigo-200 shrink-0 flex items-center gap-1 text-xs shadow-2xs">
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 inline shrink-0" />
-                        <span>{u.calculatedValue}</span>
+                        <span><MixedTextWithMath text={`$${u.calculatedValue}$`} /></span>
                       </span>
                     ) : (
                       <span className="font-mono font-bold text-amber-800 bg-amber-50 px-2 py-1 rounded border border-amber-200 shrink-0 text-xs shadow-2xs">
